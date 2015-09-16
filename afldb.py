@@ -18,7 +18,7 @@ operators = [
     ]
   }, 
   {
-    "doc": "cumulate ( inputArray {, AGGREGATE_ALL}+ [, aggrDim] )\n            AGGREGATE_CALL := AGGREGATE_FUNC ( inputAttribute ) [ AS aliasName\n           ]\n            AGGREGATE_FUNC := approxdc | avg | count | max | min | sum | stdev\n           | var | some_use_defined_aggregate_function\n\nCalculates a running aggregate over some aggregate along some fluxVector (a single dimension of the inputArray).\n\nParameters\n----------\n cumulate(input, sum(v) as sum_v, count(*) as cnt, I) +-I-> J| 00\n       01 02 03 00 01 02 03 V +----+----+----+----+\n       +--------+--------+--------+--------+ 00 | 01 | | 02 | | 00 | (1, 1) |\n       | (3, 2) | | +----+----+----+----+\n       +--------+--------+--------+--------+ 01 | | 03 | | 04 | 01 | | (3, 1)\n       | | (7, 2) | +----+----+----+----+\n       +--------+--------+--------+--------+ 02 | 05 | | 06 | | 02 | (5, 1) |\n       | (11, 2)| | +----+----+----+----+\n       +--------+--------+--------+--------+ 03 | | 07 | | 08 | 03 | | (7, 1)\n       | | (15, 2)| +----+----+----+----+\n       +--------+--------+--------+--------+\n\nNotes\n-----\n\n    - For now, cumulate does NOT handle input array that have overlaps.", 
+    "doc": "cumulate ( inputArray {, AGGREGATE_ALL}+ [, aggrDim] )\n            AGGREGATE_CALL := AGGREGATE_FUNC ( inputAttribute ) [ AS aliasName\n           ]\n            AGGREGATE_FUNC := approxdc | avg | count | max | min | sum | stdev\n           | var | some_use_defined_aggregate_function\n\nCalculates a running aggregate over some aggregate along some fluxVector (a single dimension of the inputArray).\n\nParameters\n----------\n\n       - inputArray: an input array\n       - 1 or more aggregate calls.\n       - aggrDim: the name of a dimension along with aggregates are computed.\n         Default is the first dimension.\n\nExamples\n--------\n\n      input:         cumulate(input, sum(v) as sum_v, count(*) as cnt, I)\n     +-I->\n    J|     00   01   02   03       00       01       02       03\n     V   +----+----+----+----+        +--------+--------+--------+--------+\n     00  | 01 |    | 02 |    |   00   | (1, 1) |        | (3, 2) |        |\n         +----+----+----+----+        +--------+--------+--------+--------+\n     01  |    | 03 |    | 04 |   01   |        | (3, 1) |        | (7, 2) |\n         +----+----+----+----+        +--------+--------+--------+--------+\n     02  | 05 |    | 06 |    |   02   | (5, 1) |        | (11, 2)|        |\n         +----+----+----+----+        +--------+--------+--------+--------+\n     03  |    | 07 |    | 08 |   03   |        | (7, 1) |        | (15, 2)|\n         +----+----+----+----+        +--------+--------+--------+--------+\n\nNotes\n-----\n\n    - For now, cumulate does NOT handle input array that have overlaps.", 
     "name": "cumulate", 
     "signature": [
       "array", 
@@ -109,15 +109,6 @@ operators = [
     ]
   }, 
   {
-    "doc": "build_sparse( srcArray | schema, expression, expressionIsNonEmpty )\n\nProduces a sparse array and assigns values to its non-empty cells. The schema must have a single attribute.\n\nParameters\n----------\n\n    - schemaArray | schema: an array or a schema, from which attrs and\n      dims will be used by the output array.\n    - expression: the expression which is used to compute values for\n      the non-empty cells.\n    - expressionIsNonEmpty: the expression which is used to compute\n      whether a cell is not empty.\n\nExamples\n--------\n\n    - Given array A <quantity: uint64> [year, item] =\n       year, item, quantity\n       2011, 2, 7\n       2011, 3, 6\n       2012, 1, 5\n       2012, 2, 9\n       2012, 3, 8\n    - build_sparse(A, 0, item!=2) <quantity: uint64> [year, item] =\n       year, item, quantity\n       2011, 1, 0\n       2011, 3, 0\n       2012, 1, 0\n       2012, 3, 0\n\nNotes\n-----\n\n    - The build_sparse operator can only take as input bounded\n      dimensions.", 
-    "name": "build_sparse", 
-    "signature": [
-      "schema", 
-      "expression", 
-      "expression"
-    ]
-  }, 
-  {
     "doc": "cancel( queryId )\n\nCancels a query by ID.\n\nParameters\n----------\n\n    - queryId: the query ID that can be obtained from the SciDB log or\n      via the list() command.\n\nNotes\n-----\n\n    - This operator is designed for internal use.", 
     "name": "cancel", 
     "signature": [
@@ -141,7 +132,7 @@ operators = [
     ]
   }, 
   {
-    "doc": "consume( array [, numAttrsToScanAtOnce] )\n\nCauses array parameter to be materialized if not already. numAttrsToScanAtOnce determines the number of attributes to scan as a group. Setting this value to '1' will result in a 'vertical' scan---all chunks of the current attribute will be scanned before moving on to the next attribute. Setting this value to the number of attributes will result in a 'horizontal' scan---chunk i of every attribute will be scanned before moving on to chunk i+1\n\nParameters\n----------\n\n    - array: the array to consume\n    - numAttrsToScanAtOnce: optional 'stride' of the scan, default is 1\n       Output array (an empty array):\n    <\n     >\n     [\n     ]", 
+    "doc": "consume( array [, numAttrsToScanAtOnce] )\n\nAccesses each cell of an input array, if possible, by extracting tiles and iterating over tiles. numAttrsToScanAtOnce determines the number of attributes to scan as a group. Setting this value to '1' will result in a 'vertical' scan---all chunks of the current attribute will be scanned before moving on to the next attribute. Setting this value to the number of attributes will result in a 'horizontal' scan---chunk i of every attribute will be scanned before moving on to chunk i+1\n\nParameters\n----------\n\n    - array: the array to consume\n    - numAttrsToScanAtOnce: optional 'stride' of the scan, default is 1\n       Output array (an empty array):\n    <\n     >\n     [\n     ]", 
     "name": "consume", 
     "signature": [
       "array", 
@@ -149,7 +140,7 @@ operators = [
     ]
   }, 
   {
-    "doc": "", 
+    "doc": "*      create_array ( array_name, array_schema )\n       *\n\n        or\n\n       *      CREATE ARRAY   array_name  array_schema\n       *\n\nCreates an array with the given name and schema and adds it to the database.\n\nParameters\n----------\n\n    - array_name: an identifier that names the new array.\n    - array_schema: a multidimensional array schema that describes the\n      rank and shape of the array to be created, as well as the types\n      of each its attributes.", 
     "name": "create_array", 
     "signature": [
       "array", 
@@ -223,7 +214,7 @@ operators = [
     ]
   }, 
   {
-    "doc": "index_lookup (input_array, index_array,\n       input_array.attribute_name [,output_attribute_name]\n       [,'memory_limit=MEMORY_LIMIT'])\n\nThe input_array may have any attributes or dimensions. The index_array must have a single dimension and a single non-nullable attribute. The index array data must be sorted, unique values with no empty cells between them (though it does not necessarily need to be populated to the upper bound). The third argument must correctly refer to one of the attributes of the input array - the looked-up attribute. This attribute must have the same datatype as the only attribute of the index array. The comparison '<' function must be registered in SciDB for this datatype.\n The operator will create a new attribute, named input_attribute_name_index by default, or using the provided name, which will be the new last non-empty-tag attribute in the output array. The output attribute will be of type int64 nullable and will contain the respective coordinate of the corresponding input_attribute in index_array. If the corresponding input_attribute is null, or if no value for input_attribute exists in the index_array, the output attribute at that position shall be set to null. The output attribute shall be returned along all the input attributes in a fashion similar to the apply() operator.\n The operator uses some memory to cache a part of the index_array for fast lookup of values. By default, the size of this cache is limited to MEM_ARRAY_THRESHOLD. Note this is in addition to the memory already consumed by cached MemArrays as the operator is running. If a larger or smaller limit is desired, the 'memory_limit' parameter may be used. It is provided in units of megabytes and must be at least 1.\n The operator may be further optimized to reduce memory footprint, optimized with a more clever data distribution pattern and/or extended to use multiple index arrays at the same time.\n\nParameters\n----------\n\n     input_array <..., input_attribute: type,... > [*]\n     index_array <index_attribute: type not null>\n    [dimension=0:any,any,any]\n     input_attribute --the name of the input attribute\n     [output_attribute_name] --the name for the output attribute if\n    desired\n     ['memory_limit=MEMORY_LIMIT'] --the memory limit to use MB)\n\nExamples\n--------\n\n     index_lookup(stock_trades, stock_symbols, stock_trades.ticker)\n     index_lookup(stock_trades, stock_symbols, stock_trades.ticker,\n    ticker_id, 'memory_limit=1024')", 
+    "doc": "index_lookup (input_array, index_array,\n       input_array.attribute_name [,output_attribute_name]\n       [,'memory_limit=MEMORY_LIMIT'])\n\nThe input_array may have any attributes or dimensions. The index_array must have a single dimension and a single non-nullable attribute. The index array data must be sorted, unique values with no empty cells between them (though it does not necessarily need to be populated to the upper bound). The third argument must correctly refer to one of the attributes of the input array - the looked-up attribute. This attribute must have the same datatype as the only attribute of the index array. The comparison '<' function must be registered in SciDB for this datatype.\n The operator will create a new attribute, named input_attribute_name_index by default, or using the provided name, which will be the new last non-empty-tag attribute in the output array. The output attribute will be of type int64 nullable and will contain the respective coordinate of the corresponding input_attribute in index_array. If the corresponding input_attribute is null, or if no value for input_attribute exists in the index_array, the output attribute at that position shall be set to null. The output attribute shall be returned along all the input attributes in a fashion similar to the apply() operator.\n The operator uses some memory to cache a part of the index_array for fast lookup of values. By default, the size of this cache is limited to MEM_ARRAY_THRESHOLD. Note this is in addition to the memory already consumed by cached MemArrays as the operator is running. If a larger or smaller limit is desired, the 'memory_limit' parameter may be used. It is provided in units of mebibytes and must be at least 1.\n The operator may be further optimized to reduce memory footprint, optimized with a more clever data distribution pattern and/or extended to use multiple index arrays at the same time.\n\nParameters\n----------\n\n     input_array <..., input_attribute: type,... > [*]\n     index_array <index_attribute: type not null>\n    [dimension=0:any,any,any]\n     input_attribute --the name of the input attribute\n     [output_attribute_name] --the name for the output attribute if\n    desired\n     ['memory_limit=MEMORY_LIMIT'] --the memory limit to use MB)\n\nExamples\n--------\n\n     index_lookup(stock_trades, stock_symbols, stock_trades.ticker)\n     index_lookup(stock_trades, stock_symbols, stock_trades.ticker,\n    ticker_id, 'memory_limit=1024')", 
     "name": "index_lookup", 
     "signature": [
       "array", 
@@ -378,6 +369,14 @@ operators = [
     ]
   }, 
   {
+    "doc": "remove_versions( targetArray, oldestVersionToSave )\n\nRemoves all versions of targetArray that are older than oldestVersionToSave\n\nParameters\n----------\n\n    - targetArray: the array which is targeted.\n    - oldestVersionToSave: the version, prior to which all versions\n      will be removed.", 
+    "name": "remove_versions", 
+    "signature": [
+      "array", 
+      "constant"
+    ]
+  }, 
+  {
     "doc": "rename( oldArray, newArray )\n\nChanges the name of an array.\n\nParameters\n----------\n\n    - oldArray: an existing array.\n    - newArray: the new name of the array.", 
     "name": "rename", 
     "signature": [
@@ -409,16 +408,7 @@ operators = [
     ]
   }, 
   {
-    "doc": "sample( srcArray, probability [, seed] )\n\nProduces a result array containing randomly sampled chunks from srcArray.\n\nParameters\n----------\n\n    - srcArray: the source array with srcAttrs and srcDims.\n    - probability: a double value from 0 to 1, as the probability that\n      a chunk is selected.\n    - seed: an int64 value as the seed to the random number generator.", 
-    "name": "sample", 
-    "signature": [
-      "array", 
-      "constant", 
-      "args"
-    ]
-  }, 
-  {
-    "doc": "save( srcArray, file, instanceId = -2, format = 'store' )\n\nSaves the data in an array to a file.\n\nParameters\n----------\n\n    - srcArray: the source array to save from.\n    - file: the file to save to.\n    - instanceId: positive number means an instance ID on which file\n      will be saved. -1 means to save file on every instance. -2 - on\n      coordinator.\n    - format: format in which file will be stored. Possible values are\n      'store', 'lcsv+', 'lsparse', 'dcsv', 'opaque', '(<custom\n      plugin>=''>)'\n\nNotes\n-----\n\n    n/a Must be called as SAVE('existing_array_name',\n    '/path/to/file/on/instance')", 
+    "doc": "save( srcArray, file, instanceId = -2, format = 'store' )\n\nSaves the data in an array to a file.\n\nParameters\n----------\n\n    - srcArray: the source array to save from.\n    - file: the file to save to.\n    - instanceId: positive number means an instance ID on which file\n      will be saved. -1 means to save file on every instance. -2 - on\n      coordinator.\n    - format: ArrayWriter format in which file will be stored\n\nNotes\n-----\n\n    n/a Must be called as SAVE('existing_array_name',\n    '/path/to/file/on/instance')", 
     "name": "save", 
     "signature": [
       "array", 
@@ -516,6 +506,13 @@ operators = [
   {
     "doc": "transpose( srcArray )\n\nProduces an array with the same data in srcArray but with the list of dimensions reversd.\n\nParameters\n----------\n\n    - srcArray: a source array with srcAttrs and srcDims.", 
     "name": "transpose", 
+    "signature": [
+      "array"
+    ]
+  }, 
+  {
+    "doc": "unfold( array )\n\nComplicated input data are often loaded into table-like 1-d multi- attribute arrays. Sometimes we want to assemble uniformly-typed subsets of the array attributes into a matrix, for example to compute correlations or regressions. unfold will transform the input array into a 2-d matrix whose columns correspond to the input array attributes. The output matrix row dimension will have a chunk size equal to the input array, and column chunk size equal to the number of columns.\n\nParameters\n----------\n\n    - array: the array to consume\n\nExamples\n--------\n\n    unfold(apply(build(<v:double>[i=0:9,3,0],i),w,i+0.5))", 
+    "name": "unfold", 
     "signature": [
       "array"
     ]

@@ -106,6 +106,66 @@ def build_docstring(sections):
     return '\n\n'.join(result)
 
 
+def indent(text, level):
+    """Indent a block of text by a `level` of 4 spaces"""
+    try:  # text is str
+        text = text.split('\n')
+    except AttributeError:  # list
+        pass
+    return '\n'.join('    ' * level + line for line in text)
+
+
+def build_rst(sections):
+    """
+    Build a sphinx documentation directive from a section dict
+
+    Parameters
+    ----------
+    sections : dict
+        A dictionary returned from parse_sections
+
+    Returns
+    -------
+    entry : str
+       A sphinx description of the operator
+    """
+    headers = ['Input', 'Output array',
+               'Examples', 'Notes']
+    labels = ['Parameters', 'Returns', 'Examples', 'Notes']
+
+    result = ['']
+
+    if 'Summary' in sections:
+        sec = sections['Summary']
+        summary = re.sub('\n +', ' ', sec).strip()
+        summary = summary.replace(':\n -', ':\n\n -')
+        summary = summary.replace('\n -', '\n    *')
+        result.extend(['', summary, ''])
+
+    if 'Synopsis' in sections:
+        result.append('::')
+        result.append(indent(['', sections['Synopsis'].strip(), ''], 2))
+
+    for hdr, lbl in zip(headers, labels):
+        if hdr not in sections:
+            continue
+        lbl = lbl.lower()
+        sec = sections[hdr]
+        sec = collapse_newlines(sec)
+        sec = trim_indentation(sec)
+        if empty(sec):
+            continue
+        sec = indent(sec, 1)
+
+        if lbl == 'examples':
+            result.extend(['', ':%s:' % lbl, '', '::'])
+            result.append(sec)
+        else:
+            result.extend(['', ':%s:' % lbl, sec, ''])
+
+    return ".. function:: %s" + indent(result, 1)
+
+
 def man2doc(pth):
     """
     Parse a numpy-style docstring from a SciDB manpage
@@ -121,6 +181,10 @@ def man2doc(pth):
         The numpy-style docstring
     """
     return build_docstring(parse_sections(manpage(pth)))
+
+
+def man2rst(pth):
+    return build_rst(parse_sections(manpage(pth)))
 
 
 def collapse_newlines(str):
@@ -249,6 +313,7 @@ def main(manbase, srcbase, outpath=None):
 
     outpath = outpath or 'afldb.py'
     result = []
+    rst = []
     ops = discover_operators(srcbase)
 
     for path in glob(srcbase + '/query/ops/*/Logical*cpp'):
@@ -267,6 +332,7 @@ def main(manbase, srcbase, outpath=None):
 
         try:
             doc = man2doc(manpath)
+            rst.append(man2rst(manpath) % name)
         except IndexError:
             doc = manpage(manpath)
 
@@ -277,6 +343,9 @@ def main(manbase, srcbase, outpath=None):
         outfile.write("# DO NOT EDIT -- changes will be overwritten!\n")
         outfile.write("operators = ")
         outfile.write(json.dumps(result, indent=2))
+
+    with open(outpath.strip('.py') + '.rst', 'w') as outfile:
+        outfile.write('\n\n'.join(rst))
 
 
 if __name__ == "__main__":
